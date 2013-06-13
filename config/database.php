@@ -32,7 +32,7 @@ return array
 			'database'   => 'kohana',
 		),
 		'primary_key'  => '',   // Column to return from INSERT queries, see #2188 and #2273
-		'schema'       => '',
+		'schema'       => '',   // use 'server' for search in server-defined search_path
 		'table_prefix' => '',
 		'charset'      => 'utf8',
 		'caching'      => FALSE,

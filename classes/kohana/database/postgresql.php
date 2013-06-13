@@ -94,22 +94,25 @@ class Kohana_Database_PostgreSQL extends Database
 			$this->set_charset($this->_config['charset']);
 		}
 
-		if (empty($this->_config['schema']))
-		{
-			// Assume the default schema without changing the search path
-			$this->_config['schema'] = 'public';
-		}
-		else
-		{
-			if ( ! pg_send_query($this->_connection, 'SET search_path = '.$this->_config['schema'].', pg_catalog'))
-				throw new Database_Exception(pg_last_error($this->_connection));
 
-			if ( ! $result = pg_get_result($this->_connection))
-				throw new Database_Exception(pg_last_error($this->_connection));
+        if( $this->_config['schema'] != 'server' ){
+            if (empty($this->_config['schema']))
+            {
+                // Assume the default schema without changing the search path
+                $this->_config['schema'] = 'public';
+            }
+            else
+            {
+                if ( ! pg_send_query($this->_connection, 'SET search_path = '.$this->_config['schema'].', pg_catalog'))
+                    throw new Database_Exception(pg_last_error($this->_connection));
 
-			if (pg_result_status($result) !== PGSQL_COMMAND_OK)
-				throw new Database_Exception(pg_result_error($result));
-		}
+                if ( ! $result = pg_get_result($this->_connection))
+                    throw new Database_Exception(pg_last_error($this->_connection));
+
+                if (pg_result_status($result) !== PGSQL_COMMAND_OK)
+                    throw new Database_Exception(pg_result_error($result));
+            }
+        }
 	}
 
 	public function disconnect()
@@ -330,12 +333,21 @@ class Kohana_Database_PostgreSQL extends Database
 	{
 		$this->_connection or $this->connect();
 
-		$sql = 'SELECT table_name FROM information_schema.tables WHERE table_schema = '.$this->quote($this->schema());
+        if( $this->schema() == 'server' ){
+            $sql = 'SELECT table_name FROM information_schema.tables';
 
-		if (is_string($like))
-		{
-			$sql .= ' AND table_name LIKE '.$this->quote($like);
-		}
+            if (is_string($like))
+            {
+                $sql .= ' WHERE table_name LIKE '.$this->quote($like);
+            }
+        }else{
+            $sql = 'SELECT table_name FROM information_schema.tables WHERE table_schema = '.$this->quote($this->schema());
+
+            if (is_string($like))
+            {
+                $sql .= ' AND table_name LIKE '.$this->quote($like);
+            }
+        }
 
 		return $this->query(Database::SELECT, $sql, FALSE)->as_array(NULL, 'table_name');
 	}
@@ -344,15 +356,26 @@ class Kohana_Database_PostgreSQL extends Database
 	{
 		$this->_connection or $this->connect();
 
-		$sql = 'SELECT column_name, column_default, is_nullable, data_type, character_maximum_length, numeric_precision, numeric_scale, datetime_precision'
-			.' FROM information_schema.columns'
-			.' WHERE table_schema = '.$this->quote($this->schema())
-			.' AND table_name = '.$this->quote($add_prefix ? ($this->table_prefix().$table) : $table);
+        if( $this->schema() == 'server' ){
+            $sql = 'SELECT column_name, column_default, is_nullable, data_type, character_maximum_length, numeric_precision, numeric_scale, datetime_precision'
+                .' FROM information_schema.columns'
+                .' WHERE table_name = '.$this->quote($add_prefix ? ($this->table_prefix().$table) : $table);
 
-		if (is_string($like))
-		{
-			$sql .= ' AND column_name LIKE '.$this->quote($like);
-		}
+            if (is_string($like))
+            {
+                $sql .= ' AND column_name LIKE '.$this->quote($like);
+            }
+        }else{
+            $sql = 'SELECT column_name, column_default, is_nullable, data_type, character_maximum_length, numeric_precision, numeric_scale, datetime_precision'
+                .' FROM information_schema.columns'
+                .' WHERE table_schema = '.$this->quote($this->schema())
+                .' AND table_name = '.$this->quote($add_prefix ? ($this->table_prefix().$table) : $table);
+
+            if (is_string($like))
+            {
+                $sql .= ' AND column_name LIKE '.$this->quote($like);
+            }
+        }
 
 		$sql .= ' ORDER BY ordinal_position';
 
