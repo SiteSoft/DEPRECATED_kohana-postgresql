@@ -97,6 +97,7 @@ class Kohana_Database_PostgreSQL_Result extends Database_Result
 	 */
 	public function current()
 	{
+
 		if ( ! $this->offsetExists($this->_current_row))
 			return FALSE;
 

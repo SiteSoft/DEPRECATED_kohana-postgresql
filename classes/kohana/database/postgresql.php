@@ -12,7 +12,7 @@ class Kohana_Database_PostgreSQL extends Database
 {
 	protected $_version;
 
-	protected function __construct($name, $config)
+	public  function __construct($name, $config)
 	{
 		parent::__construct($name, $config);
 
@@ -70,6 +70,7 @@ class Kohana_Database_PostgreSQL extends Database
 
 	public function connect()
 	{
+        $benchmark = Profiler::start("Database ({$this->_instance} : connection )", "");
 		if ($this->_connection)
 			return;
 
@@ -113,6 +114,7 @@ class Kohana_Database_PostgreSQL extends Database
                     throw new Database_Exception(pg_result_error($result));
             }
         }
+        Profiler::stop($benchmark);
 	}
 
 	public function disconnect()
@@ -162,7 +164,7 @@ class Kohana_Database_PostgreSQL extends Database
 		if ( ! empty($this->_config['profiling']))
 		{
 			// Benchmark this query for the current instance
-			$benchmark = Profiler::start("Database ({$this->_instance})", $sql);
+			$benchmark = Profiler::start("Database ({$this->_instance} : sql)", $sql);
 		}
 
 		try
